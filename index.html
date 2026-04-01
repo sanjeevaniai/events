@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SANJEEVANI AI — WashU Olin Business School · April 3, 2026</title>
+<title>SANJEEVANI AI , WashU Olin Business School · April 3, 2026</title>
 <meta name="description" content="AI Literacy Assessment by SANJEEVANI AI. Ten questions. Three minutes. Discover your AI readiness score.">
 <link rel="icon" type="image/png" href="SANJEEVANI AI LOGO.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -596,10 +596,10 @@ const questions = [
   },
   {
     category:'Technical Landscape',
-    text:'Which have you personally built something with?',
+    text:'What tools have you used to build something?',
     context:'Hands-on experience reveals depth faster than definitions.',
     options:[
-      {letter:'A',text:'None \u2014 I use AI tools but have not built anything',score:1},
+      {letter:'A',text:'None , I use AI tools but have not built anything',score:1},
       {letter:'B',text:'API calls to OpenAI, Anthropic, or similar',score:2},
       {letter:'C',text:'Hugging Face models, fine-tuning, or PyTorch workflows',score:4},
       {letter:'D',text:'End-to-end ML pipelines, deployment, monitoring, or MLOps infrastructure',score:5}
@@ -612,7 +612,7 @@ const questions = [
     options:[
       {letter:'A',text:'It might be too slow for real-time use',score:1},
       {letter:'B',text:'Users may not trust the outputs',score:2},
-      {letter:'C',text:'Distribution shift \u2014 real-world data differs from training data, causing silent degradation',score:5},
+      {letter:'C',text:'Distribution shift , real-world data differs from training data, causing silent degradation',score:5},
       {letter:'D',text:'The 6% error rate will cause immediate obvious failures',score:1}
     ]
   },
@@ -635,7 +635,7 @@ const questions = [
       {letter:'A',text:'I am not familiar with any formal AI governance frameworks',score:1},
       {letter:'B',text:'The EU AI Act',score:3},
       {letter:'C',text:'NIST AI RMF',score:4},
-      {letter:'D',text:'All of EU AI Act, NIST AI RMF, and ISO 42001 \u2014 I know all three',score:5}
+      {letter:'D',text:'All of EU AI Act, NIST AI RMF, and ISO 42001 , I know all three',score:5}
     ]
   },
   {
@@ -679,7 +679,7 @@ const questions = [
       {letter:'A',text:'Something to address after product-market fit',score:1},
       {letter:'B',text:'A requirement imposed by enterprise procurement',score:2},
       {letter:'C',text:'An architectural layer embedded from the first line of production code',score:4},
-      {letter:'D',text:'A competitive moat \u2014 the builder who governs well wins enterprise deals others cannot close',score:5}
+      {letter:'D',text:'A competitive moat , the builder who governs well wins enterprise deals others cannot close',score:5}
     ]
   },
   {
@@ -1117,7 +1117,7 @@ async function elevenLabsSpeak(text) {
 // Tap-to-start overlay
 function showTapOverlay() {
   if (typeoutRan) {
-    // Already started before (e.g. navigating back) — just run without overlay
+    // Already started before (e.g. navigating back) , just run without overlay
     runTypeout();
     return;
   }
@@ -1142,11 +1142,11 @@ function handleTapToStart() {
   // Start the word animation
   runTypeout();
 
-  // Play audio — user tap is the gesture that unlocks it
+  // Play audio , user tap is the gesture that unlocks it
   if (greetingReady && greetingAudio) {
     greetingAudio.play().catch(() => {});
   } else {
-    // Audio still loading — play as soon as it's ready
+    // Audio still loading , play as soon as it's ready
     const check = setInterval(() => {
       if (greetingReady && greetingAudio) {
         clearInterval(check);
