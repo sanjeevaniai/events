@@ -711,7 +711,7 @@ function showState(id) {
   document.getElementById(id).classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
   document.querySelector('.progress-bar-wrap').style.display = id === 'state-quiz' ? 'block' : 'none';
-  if (id === 'state-landing') { runTypeout(); preloadGreeting(); }
+  if (id === 'state-landing') { runTypeout(); triggerGreetingAudio(); }
   if (id !== 'state-landing') document.getElementById('hear-scout').classList.add('hidden');
 }
 
@@ -735,6 +735,7 @@ function runTypeout() {
       }, 600);
       return;
     }
+    if (i === 0) triggerGreetingAudio();
     const span = document.createElement('span');
     span.className = 'word' + (i < introWords.length ? ' word-intro' : '');
     span.textContent = allWords[i];
@@ -1081,21 +1082,22 @@ function handleRegister(e) {
 // ═══════════════════════════════════════
 // SCOUT VOICE (ElevenLabs)
 // ═══════════════════════════════════════
-const SCOUT_VOICE_ID = 'mLaWE8FE6FVgE4fYHqaC';
+const SCOUT_VOICE_ID = 'gJx1vCzNCD1EQHT212Ls';
 let audioUnlocked = false;
 let greetingAudio = null;
 let greetingReady = false;
-let greetingWaiting = false;
+let greetingPlayed = false;
 
-const GREETING_TEXT = "Hi, I am Scout \u2014 SANJEEVANI AI's intelligent guide. My job is simple: find out what you already know about AI and give you an honest score. No hype, no jargon. Just a clear picture of where you stand right now. After today's session with Suneeta, we will check back and see exactly how much your score moves. Ready to find out where you are starting from?";
+const GREETING_TEXT = "Hi, I am Scout, SANJEEVANI AI's intelligent guide. My job is simple: find out what you already know about AI and give you an honest score. No hype, no jargon. Just a clear picture of where you stand right now. After today's session with Suneeta, we will check back and see exactly how much your score moves. Ready to find out where you are starting from?";
 
-const INVITATION_TEXT = "Your score is just the beginning. Join us for the hands-on session \u2014 live, whether you are in this room or anywhere in the world. Scroll down and secure your spot. Scout will be there.";
+const INVITATION_TEXT = "Your score is just the beginning. Join us for the hands-on session, live, whether you are in this room or anywhere in the world. Scroll down and secure your spot. Scout will be there.";
 
 async function elevenLabsSpeak(text) {
   try {
+    console.log('[Scout Voice] Fetching audio...');
     const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${SCOUT_VOICE_ID}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'xi-api-key': 'sk_f15fc2127a8407437ffcff470ea1699456b8c3df6d499910' },
       body: JSON.stringify({
         text: text,
         model_id: 'eleven_turbo_v2_5',
@@ -1107,46 +1109,66 @@ async function elevenLabsSpeak(text) {
         }
       })
     });
-    if (!resp.ok) return null;
+    console.log('[Scout Voice] Response status:', resp.status);
+    if (!resp.ok) { console.log('[Scout Voice] Error response:', await resp.text()); return null; }
     const blob = await resp.blob();
+    console.log('[Scout Voice] Audio blob size:', blob.size);
     const url = URL.createObjectURL(blob);
-    return new Audio(url);
-  } catch (e) { return null; }
+    const audio = new Audio(url);
+    return audio;
+  } catch (e) { console.log('[Scout Voice] Fetch error:', e); return null; }
 }
 
-// Moment 1: Preload greeting when landing loads
-function preloadGreeting() {
-  elevenLabsSpeak(GREETING_TEXT).then(audio => {
-    if (audio) {
-      greetingAudio = audio;
-      greetingReady = true;
-      if (greetingWaiting) playGreeting();
-    }
-  });
-  // Show the Hear Scout button
+// Moment 1: Preload audio
+let greetingLoading = false;
+function triggerGreetingAudio() {
+  if (greetingLoading || greetingReady) {
+    document.getElementById('hear-scout').classList.remove('hidden');
+    return;
+  }
+  greetingLoading = true;
   document.getElementById('hear-scout').classList.remove('hidden');
-}
-
-function playGreeting() {
-  if (!greetingAudio) return;
-  greetingAudio.play().catch(() => {});
-  // Update button to show playing state
-  const label = document.querySelector('.hear-scout-label');
-  label.textContent = 'Playing...';
-  greetingAudio.addEventListener('ended', () => {
-    label.textContent = 'Hear Scout';
+  elevenLabsSpeak(GREETING_TEXT).then(audio => {
+    if (!audio) return;
+    greetingAudio = audio;
+    greetingReady = true;
+    audio.volume = 1.0;
+    console.log('[Scout Voice] Audio preloaded and ready');
+    audio.addEventListener('ended', () => {
+      greetingPlayed = true;
+      const label = document.querySelector('.hear-scout-label');
+      const btn = document.querySelector('.hear-scout-btn');
+      label.textContent = 'Replay';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+    });
   });
 }
 
 function handleHearScout() {
   audioUnlocked = true;
   const label = document.querySelector('.hear-scout-label');
-  if (greetingReady && greetingAudio) {
-    playGreeting();
-  } else {
-    label.textContent = 'Scout is coming...';
-    greetingWaiting = true;
+  const btn = document.querySelector('.hear-scout-btn');
+
+  // If audio is playing, stop it
+  if (greetingAudio && !greetingAudio.paused) {
+    greetingAudio.pause();
+    greetingAudio.currentTime = 0;
+    label.textContent = 'Hear Scout';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+    return;
   }
+
+  // If ready, play
+  if (greetingReady && greetingAudio) {
+    greetingAudio.currentTime = 0;
+    greetingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
+    label.textContent = 'Stop';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+    return;
+  }
+
+  // Not ready yet
+  label.textContent = 'Loading...';
 }
 
 // Moment 2: Debrief voice
