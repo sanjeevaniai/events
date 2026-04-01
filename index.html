@@ -341,26 +341,24 @@ footer{
   position:fixed;top:-10px;width:8px;height:8px;z-index:150;
   pointer-events:none;border-radius:2px;
 }
-/* ─── SCOUT VOICE ─── */
-.hear-scout{
-  position:fixed;bottom:24px;right:24px;z-index:200;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  cursor:pointer;transition:opacity .3s;
+/* ─── TAP TO START ─── */
+.tap-overlay{
+  position:fixed;inset:0;z-index:300;background:#f8f7f4;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:opacity .5s ease;
 }
-.hear-scout.hidden{display:none!important}
-.hear-scout-btn{
-  width:48px;height:48px;border-radius:50%;border:1px solid rgba(0,137,94,0.25);
-  background:rgba(0,137,94,0.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .2s;
-  animation:pulseScout 2.5s ease-in-out infinite;
+.tap-overlay.fade-out{opacity:0;pointer-events:none}
+.tap-overlay .tap-avatar{
+  width:200px;height:200px;border-radius:50%;overflow:hidden;margin-bottom:28px;
 }
-.hear-scout-btn:hover{background:rgba(0,137,94,0.2);border-color:var(--cyan)}
-.hear-scout-btn svg{width:20px;height:20px;color:#1a6b45}
-.hear-scout-label{font-family:'Roboto',sans-serif;font-size:12px;color:#1a6b45;font-weight:400}
-@keyframes pulseScout{
-  0%,100%{box-shadow:0 0 0 0 rgba(0,137,94,0.2)}
-  50%{box-shadow:0 0 0 8px rgba(0,137,94,0)}
+.tap-overlay .tap-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.tap-overlay .tap-title{
+  font-family:'Roboto',sans-serif;font-weight:700;font-size:32px;
+  color:#1a6b45;margin-bottom:12px;
+}
+.tap-overlay .tap-sub{
+  font-family:'Roboto',sans-serif;font-weight:400;font-size:14px;
+  color:#0a1f44;letter-spacing:1px;
 }
 .audio-progress{
   height:3px;background:rgba(0,137,94,0.12);border-radius:2px;
@@ -568,12 +566,11 @@ footer{
   </div>
 </footer>
 
-<!-- Hear Scout button -->
-<div class="hear-scout hidden" id="hear-scout" onclick="handleHearScout()">
-  <div class="hear-scout-btn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-  </div>
-  <span class="hear-scout-label">Hear Scout</span>
+<!-- Tap to start overlay -->
+<div class="tap-overlay hidden" id="tap-overlay" onclick="handleTapToStart()">
+  <div class="tap-avatar"><img src="scout-avatar.png" alt="Scout"></div>
+  <div class="tap-title">Tap to meet Scout</div>
+  <div class="tap-sub">SANJEEVANI AI &middot; WashU Olin &middot; April 3, 2026</div>
 </div>
 
 <!-- Toast -->
@@ -711,8 +708,7 @@ function showState(id) {
   document.getElementById(id).classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
   document.querySelector('.progress-bar-wrap').style.display = id === 'state-quiz' ? 'block' : 'none';
-  if (id === 'state-landing') { runTypeout(); triggerGreetingAudio(); }
-  if (id !== 'state-landing') document.getElementById('hear-scout').classList.add('hidden');
+  if (id === 'state-landing') showTapOverlay();
 }
 
 let typeoutRan = false;
@@ -735,7 +731,6 @@ function runTypeout() {
       }, 600);
       return;
     }
-    if (i === 0) triggerGreetingAudio();
     const span = document.createElement('span');
     span.className = 'word' + (i < introWords.length ? ' word-intro' : '');
     span.textContent = allWords[i];
@@ -1119,56 +1114,46 @@ async function elevenLabsSpeak(text) {
   } catch (e) { console.log('[Scout Voice] Fetch error:', e); return null; }
 }
 
-// Moment 1: Preload audio
-let greetingLoading = false;
-function triggerGreetingAudio() {
-  if (greetingLoading || greetingReady) {
-    document.getElementById('hear-scout').classList.remove('hidden');
+// Tap-to-start overlay
+function showTapOverlay() {
+  if (typeoutRan) {
+    // Already started before (e.g. navigating back) — just run without overlay
+    runTypeout();
     return;
   }
-  greetingLoading = true;
-  document.getElementById('hear-scout').classList.remove('hidden');
+  const overlay = document.getElementById('tap-overlay');
+  overlay.classList.remove('hidden');
+  // Preload audio while user sees the overlay
   elevenLabsSpeak(GREETING_TEXT).then(audio => {
     if (!audio) return;
     greetingAudio = audio;
     greetingReady = true;
     audio.volume = 1.0;
-    console.log('[Scout Voice] Audio preloaded and ready');
-    audio.addEventListener('ended', () => {
-      greetingPlayed = true;
-      const label = document.querySelector('.hear-scout-label');
-      const btn = document.querySelector('.hear-scout-btn');
-      label.textContent = 'Replay';
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-    });
+    audio.addEventListener('ended', () => { greetingPlayed = true; });
   });
 }
 
-function handleHearScout() {
+function handleTapToStart() {
   audioUnlocked = true;
-  const label = document.querySelector('.hear-scout-label');
-  const btn = document.querySelector('.hear-scout-btn');
+  const overlay = document.getElementById('tap-overlay');
+  overlay.classList.add('fade-out');
+  setTimeout(() => overlay.classList.add('hidden'), 500);
 
-  // If audio is playing, stop it
-  if (greetingAudio && !greetingAudio.paused) {
-    greetingAudio.pause();
-    greetingAudio.currentTime = 0;
-    label.textContent = 'Hear Scout';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-    return;
-  }
+  // Start the word animation
+  runTypeout();
 
-  // If ready, play
+  // Play audio — user tap is the gesture that unlocks it
   if (greetingReady && greetingAudio) {
-    greetingAudio.currentTime = 0;
-    greetingAudio.play().then(() => { audioUnlocked = true; }).catch(() => {});
-    label.textContent = 'Stop';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
-    return;
+    greetingAudio.play().catch(() => {});
+  } else {
+    // Audio still loading — play as soon as it's ready
+    const check = setInterval(() => {
+      if (greetingReady && greetingAudio) {
+        clearInterval(check);
+        greetingAudio.play().catch(() => {});
+      }
+    }, 200);
   }
-
-  // Not ready yet
-  label.textContent = 'Loading...';
 }
 
 // Moment 2: Debrief voice
